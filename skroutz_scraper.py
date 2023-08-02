@@ -52,14 +52,10 @@ def process_skroutz_items():
                 product_link = WebDriverWait(product, timeout=10).until(
                     EC.presence_of_element_located((By.TAG_NAME, "a"))).get_attribute("href")
                 try:
-                    product_price_elem = WebDriverWait(product, timeout=6).until(
-                        EC.visibility_of_element_located((By.CLASS_NAME, "card-content"))).find_element(By.CLASS_NAME,
-                                                                                                        "price").find_element(
-                        By.TAG_NAME, "a")
+                    product_price_elem = WebDriverWait(product, timeout=6).until(EC.visibility_of_element_located((By.CLASS_NAME, "card-content"))).find_element(By.CLASS_NAME,"price").find_element(By.TAG_NAME, "a")
                 except NoSuchElementException:
                     continue
-                product_price = float(
-                    product_price_elem.text.strip().replace('από', '').replace('€', '').replace(',', '.'))
+                product_price = float(product_price_elem.text.strip().replace('από', '').replace('€', '').replace(',', '.'))
             except TimeoutException:
                 continue
 
@@ -146,8 +142,8 @@ def Scrape_Skroutz():
         category_number = int(category_number)
 
         # go to the right category
-        link = driver.find_element(By.LINK_TEXT,categories[category_number-1])
-        link.click()
+        link = driver.find_element(By.LINK_TEXT, categories[category_number-1]).get_attribute("href")
+        driver.get(link)
 
     time.sleep(2)
 
