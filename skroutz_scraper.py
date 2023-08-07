@@ -15,13 +15,31 @@ def Setup():
     global driver
     config = configparser.ConfigParser()
     config.read("config.ini")
-    chrome_driver_path = config.get('General_settings', 'chrome_driver_path')
-    chrome_options = Options()
-    chrome_options.add_argument('--headless=new')
-    if(chrome_driver_path =="0"):
-        driver = webdriver.Chrome(options=chrome_options)
-    else:
-        driver = webdriver.Chrome(chrome_driver_path, options=chrome_options)
+
+    driver_path = config.get('General_settings', 'driver_path')
+    browser_type = config.get("General_settings","browser_type").lower()
+
+    browser_options = Options()
+
+    if(browser_type == "chrome" ):
+        browser_options.add_argument('--headless=new')
+        if (driver_path == "0"):
+            driver = webdriver.Chrome(options=browser_options)
+        else:
+            driver = webdriver.Chrome(driver_path, options=browser_options)
+    elif(browser_type== "firefox"):
+        browser_options.add_argument("-headless")
+        if (driver_path == "0"):
+            driver = webdriver.Firefox(options=browser_options)
+        else:
+            driver = webdriver.Firefox(driver_path, options=browser_options)
+    elif(browser_type == "edge"):
+        browser_options.add_argument("--headless=new")
+        if (driver_path == "0"):
+            driver = webdriver.Edge(options=browser_options)
+        else:
+            driver = webdriver.Edge(driver_path, options=browser_options)
+
 
 def no_categories_available():
     "Returns True if there are available categories to choose from and False if there aren't"
@@ -32,6 +50,7 @@ def pages_are_multiple():
     return len(driver.find_elements(By.CLASS_NAME, "paginator")) != 0
 
 def process_skroutz_items():
+    "Processes all products from all the available pages and stores them in a list"
     global all_products
     base_url = driver.current_url
     all_products = []
@@ -54,6 +73,7 @@ def process_skroutz_items():
                 try:
                     product_price_elem = WebDriverWait(product, timeout=6).until(EC.visibility_of_element_located((By.CLASS_NAME, "card-content"))).find_element(By.CLASS_NAME,"price").find_element(By.TAG_NAME, "a")
                 except NoSuchElementException:
+                    # Product is unavailable
                     continue
                 product_price = float(product_price_elem.text.strip().replace('από', '').replace('€', '').replace(',', '.'))
             except TimeoutException:
@@ -71,6 +91,7 @@ def process_skroutz_items():
 
 
 def select_skroutz_items():
+    "Selects the skroutz items according to user input, stores them in a list and returns them"
     print()  # empty line
     print("-----------------------------")
     product_numbers_string = input(
@@ -114,12 +135,8 @@ def Scrape_Skroutz():
     search.send_keys(product)
     search.send_keys(Keys.RETURN)
 
-    # returns true if there's options of categories to select from
-    select_category = no_categories_available()
-
-
     # if there's categories to select, select one and browse to that category
-    if(select_category):
+    if(no_categories_available()):
         unordered_list = driver.find_element(By.CLASS_NAME, "scroll-area")
         categories_p  = unordered_list.find_elements(By.TAG_NAME, "p")
         categories = [category.text for category in categories_p]
@@ -147,24 +164,20 @@ def Scrape_Skroutz():
 
     time.sleep(2)
 
-
     if(pages_are_multiple()):
         unordered_list = driver.find_element(By.CLASS_NAME, "paginator")
         pages_number = int(unordered_list.find_elements(By.TAG_NAME, "a")[-2].text)
     else:
         pages_number = 1
 
-
     # save all the products from all the available pages to a list
     process_skroutz_items()
-
 
     # print all products
     products_number = len(all_products)
     print("-----------------------------")
     for i in range(products_number):
         print(str(i+1) + ": " + all_products[i]["name"])
-
 
     # Select product number(s) and save them in a list
     selected_products = select_skroutz_items()
