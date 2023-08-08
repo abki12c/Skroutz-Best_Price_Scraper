@@ -6,7 +6,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 
@@ -19,21 +18,22 @@ def Setup():
     driver_path = config.get('General_settings', 'driver_path')
     browser_type = config.get("General_settings","browser_type").lower()
 
-    browser_options = Options()
-
     if(browser_type == "chrome" ):
+        browser_options = webdriver.ChromeOptions()
         browser_options.add_argument('--headless=new')
         if (driver_path == "0"):
             driver = webdriver.Chrome(options=browser_options)
         else:
             driver = webdriver.Chrome(driver_path, options=browser_options)
     elif(browser_type== "firefox"):
+        browser_options = webdriver.FirefoxOptions()
         browser_options.add_argument("-headless")
         if (driver_path == "0"):
             driver = webdriver.Firefox(options=browser_options)
         else:
             driver = webdriver.Firefox(driver_path, options=browser_options)
     elif(browser_type == "edge"):
+        browser_options = webdriver.EdgeOptions()
         browser_options.add_argument("--headless=new")
         if (driver_path == "0"):
             driver = webdriver.Edge(options=browser_options)
@@ -41,13 +41,17 @@ def Setup():
             driver = webdriver.Edge(driver_path, options=browser_options)
 
 
-def no_categories_available():
+def categories_are_available():
     "Returns True if there are available categories to choose from and False if there aren't"
     return len(driver.find_elements(By.ID, "skus_result"))!=0
 
 def pages_are_multiple():
     "returns True if the product category has multiple pages and False if not"
     return len(driver.find_elements(By.CLASS_NAME, "paginator")) != 0
+
+def filter_products():
+    "Selects filters"
+    filter_options = driver.find_element(By.CLASS_NAME,"filters-list")
 
 def process_skroutz_items():
     "Processes all products from all the available pages and stores them in a list"
@@ -136,7 +140,7 @@ def Scrape_Skroutz():
     search.send_keys(Keys.RETURN)
 
     # if there's categories to select, select one and browse to that category
-    if(no_categories_available()):
+    if(categories_are_available()):
         unordered_list = driver.find_element(By.CLASS_NAME, "scroll-area")
         categories_p  = unordered_list.find_elements(By.TAG_NAME, "p")
         categories = [category.text for category in categories_p]
