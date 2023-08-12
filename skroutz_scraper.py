@@ -125,7 +125,7 @@ def select_skroutz_items():
     print("-----------------------------")
     # save the selected products
     selected_products = [all_products[product_number - 1] for product_number in product_numbers_list]
-    return  selected_products
+    return selected_products
 
 def Scrape_Skroutz():
     global products_number, pages_number
@@ -142,7 +142,7 @@ def Scrape_Skroutz():
     # if there's categories to select, select one and browse to that category
     if(categories_are_available()):
         unordered_list = driver.find_element(By.CLASS_NAME, "scroll-area")
-        categories_p  = unordered_list.find_elements(By.TAG_NAME, "p")
+        categories_p = unordered_list.find_elements(By.TAG_NAME, "p")
         categories = [category.text for category in categories_p]
 
 
