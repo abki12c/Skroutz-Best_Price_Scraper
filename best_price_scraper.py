@@ -1,9 +1,7 @@
-import time
 import configparser
 from selenium import webdriver
 from selenium.common import NoSuchElementException, TimeoutException
 from selenium.webdriver import Keys
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -19,21 +17,22 @@ def Setup():
     driver_path = config.get('General_settings', 'driver_path')
     browser_type = config.get("General_settings","browser_type").lower()
 
-    browser_options = Options()
-
     if(browser_type == "chrome" ):
+        browser_options = webdriver.ChromeOptions()
         browser_options.add_argument('--headless=new')
         if (driver_path == "0"):
             driver = webdriver.Chrome(options=browser_options)
         else:
             driver = webdriver.Chrome(driver_path, options=browser_options)
     elif(browser_type== "firefox"):
+        browser_options = webdriver.FirefoxOptions()
         browser_options.add_argument("-headless")
         if (driver_path == "0"):
             driver = webdriver.Firefox(options=browser_options)
         else:
             driver = webdriver.Firefox(driver_path, options=browser_options)
     elif(browser_type == "edge"):
+        browser_options = webdriver.EdgeOptions()
         browser_options.add_argument("--headless=new")
         if (driver_path == "0"):
             driver = webdriver.Edge(options=browser_options)
