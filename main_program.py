@@ -34,12 +34,12 @@ if(__name__=="__main__"):
     print("----------------------------------------------------------")
     # TODO: 2,3,4,5
 
-    choice = int(input("Choose the desired functionality number: "))
-    while(choice not in range(1,6)):
-        choice = int(input("Wrong input. Please enter the desired functionality number: "))
+    choice = input("Choose the desired functionality number: ")
+    while(choice not in ['1','2','3','4','5']):
+        choice = input("Wrong input. Please enter the desired functionality number: ")
 
     print() # empty line
-    if(choice==1):
+    if(choice=='1'):
         Scrape_Skroutz()
-    elif(choice==2):
+    elif(choice=='2'):
         Scrape_Best_Price()

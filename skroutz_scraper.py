@@ -53,7 +53,7 @@ def filter_products():
     "Selects filters"
     filter_options = driver.find_element(By.CLASS_NAME,"filters-list")
 
-def process_skroutz_items():
+def process_skroutz_items(pages_number):
     "Processes all products from all the available pages and stores them in a list"
     global all_products
     base_url = driver.current_url
@@ -94,12 +94,11 @@ def process_skroutz_items():
     print("Processed all products")
 
 
-def select_skroutz_items():
+def select_skroutz_items(products_number):
     "Selects the skroutz items according to user input, stores them in a list and returns them"
     print()  # empty line
     print("-----------------------------")
-    product_numbers_string = input(
-        "Select product(s) number(s) of the product(s) you want to choose. If products are more than one seperate them with commas: ")
+    product_numbers_string = input("Select product(s) number(s) of the product(s) you want to choose. If products are more than one seperate them with commas: ")
     product_numbers_list = []
     commas = product_numbers_string.count(",")
     product_numbers_are_incorrect = True
@@ -128,8 +127,6 @@ def select_skroutz_items():
     return selected_products
 
 def Scrape_Skroutz():
-    global products_number, pages_number
-
     Setup()
     url = "https://www.skroutz.gr"
     driver.get(url)
@@ -175,7 +172,7 @@ def Scrape_Skroutz():
         pages_number = 1
 
     # save all the products from all the available pages to a list
-    process_skroutz_items()
+    process_skroutz_items(pages_number)
 
     # print all products
     products_number = len(all_products)
@@ -184,7 +181,7 @@ def Scrape_Skroutz():
         print(str(i+1) + ": " + all_products[i]["name"])
 
     # Select product number(s) and save them in a list
-    selected_products = select_skroutz_items()
+    selected_products = select_skroutz_items(products_number)
     # find the cheapest product
     selected_products.sort(key=lambda product: product["price"])
     cheapest_product = selected_products[0]
