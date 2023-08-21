@@ -24,6 +24,7 @@ def process_best_price_items(pages,response):
 
         data = response.json()
         html = data['html']
+        js_data = json.loads(data['jsData'])
 
         html_doc = BeautifulSoup(html, 'html.parser')
 
@@ -83,16 +84,22 @@ def select_items(products_number):
     selected_products = [all_products[product_number - 1] for product_number in product_numbers_list]
     return selected_products
 
-def Scrape_Skroutz():
+def Scrape_Best_Price():
     global headers
+    headers = {
+        'Accept': 'application/json',
+        'Referer': 'https://www.bestprice.gr/',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+        'X-Fromxhr': '1',
+        'X-Theme': 'default',
+        'X-Viewport': 'LG'
+    }
 
     product = input("Enter the product you're looking for: ")
     product.replace(" ","+")
-    url = f"https://www.skroutz.gr/search?keyphrase={product}"
+    url = f"https://www.bestprice.gr/search?q={product}"
 
-    response = requests.get(url)
-
-    print(response.status_code)
+    response = requests.get(url, headers=headers)
 
     if (response.status_code != 200):
         exit("Page Unreachable")
