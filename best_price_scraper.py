@@ -1,110 +1,44 @@
-import configparser
-from selenium import webdriver
-from selenium.common import NoSuchElementException, TimeoutException
-from selenium.webdriver import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
+import json
+import requests
+from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 
-def Setup():
-    "Sets up the web driver with the customized configuration"
-    global driver
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-
-    driver_path = config.get('General_settings', 'driver_path')
-    browser_type = config.get("General_settings","browser_type").lower()
-
-    if(browser_type == "chrome" ):
-        browser_options = webdriver.ChromeOptions()
-        browser_options.add_argument('--headless=new')
-        if (driver_path == "0"):
-            driver = webdriver.Chrome(options=browser_options)
-        else:
-            driver = webdriver.Chrome(driver_path, options=browser_options)
-    elif(browser_type== "firefox"):
-        browser_options = webdriver.FirefoxOptions()
-        browser_options.add_argument("-headless")
-        if (driver_path == "0"):
-            driver = webdriver.Firefox(options=browser_options)
-        else:
-            driver = webdriver.Firefox(driver_path, options=browser_options)
-    elif(browser_type == "edge"):
-        browser_options = webdriver.EdgeOptions()
-        browser_options.add_argument("--headless=new")
-        if (driver_path == "0"):
-            driver = webdriver.Edge(options=browser_options)
-        else:
-            driver = webdriver.Edge(driver_path, options=browser_options)
-
-def categories_are_available():
+def categories_are_available(html_doc):
     "Returns True if there are available categories to choose from and False if there aren't"
-    return len(driver.find_elements(By.CLASS_NAME, "categories__category"))!=0
+    categories = html_doc.find_all(class_="categories__category")
+    return len(categories) != 0
 
-def pages_are_multiple():
-    "returns True if the product category has multiple pages and False if not"
-    return len(driver.find_elements(By.CLASS_NAME,"pagination.pagination-has-next.pagination-has-hint"))!=0
-
-def process_best_price_items(pages_number):
+def process_best_price_items(pages,response):
     "Processes all products from all the available pages and stores them in a list"
     global all_products
-    base_url = driver.current_url
+    base_url = response.url
     all_products = []
     current_page_number = 1
-    for i in tqdm(range(1, pages_number + 1), desc="Processing page items...", colour="GREEN", unit="page"):
-        current_url = base_url + "&page=" + str(current_page_number)
-        driver.get(current_url)
+    for i in tqdm(range(1, pages + 1), desc="Processing page items...", colour="GREEN", unit="page"):
+        current_url = f"{base_url}&pg={current_page_number}"
+        response = requests.get(current_url,headers=headers)
 
-        WebDriverWait(driver, timeout=10).until(EC.url_to_be(current_url))
-        WebDriverWait(driver, timeout=10).until(EC.presence_of_all_elements_located((By.CLASS_NAME, "p__products")))
-        products_list = driver.find_element(By.CLASS_NAME, "p__products")
+        if(response.status_code!=200):
+            exit("Page Unreachable")
 
+        data = response.json()
+        html = data['html']
 
-        window_height = driver.execute_script("return window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;")
-        scroll_amount = window_height // 3  # Scroll one-third of the window height
+        html_doc = BeautifulSoup(html, 'html.parser')
 
-        last_height = driver.execute_script("return document.body.scrollHeight")
-        print("last height: " + str(last_height))
-        while True:
-            # Scroll down by the specified amount
-            driver.execute_script(f"window.scrollTo(0, window.scrollY + {scroll_amount});")
-
-            # Add a wait condition here to ensure new content is loaded
-            try:
-                WebDriverWait(driver, timeout=10).until(
-                    EC.presence_of_all_elements_located((By.CLASS_NAME, "p.p--portrait")))
-            except TimeoutException:
-                pass  # Handle the exception or continue scrolling
-
-            # Calculate new scroll height and compare with last scroll height
-            new_height = driver.execute_script("return document.body.scrollHeight")
-            print("new height: " + str(new_height))
-            if new_height == last_height:
-                break
-            last_height = new_height
-        try:
-            products_list = products_list.find_elements(By.CLASS_NAME, "p.p--portrait")
-        except NoSuchElementException:
-            products_list = products_list.find_elements(By.CLASS_NAME,"p")
-        #products_list = products_list.find_elements(By.XPATH, ".//*")
-        print(len(products_list))
+        products_list = html_doc.find_all('div', {'data-id': True, 'data-cid': True})
 
         for product in products_list:
+            product_name = product.find_all("a")[1]["title"]
+            product_link = "https://www.bestprice.gr" + product.find_all("a")[1]["href"]
             try:
-                product_name = WebDriverWait(product, timeout=10).until(
-                    EC.presence_of_all_elements_located((By.TAG_NAME, "a")))[1].get_attribute("title")
-                product_link = WebDriverWait(product, timeout=10).until(
-                    EC.presence_of_all_elements_located((By.TAG_NAME, "a")))[1].get_attribute("href")
-                try:
-                    product_price_elem = WebDriverWait(product, timeout=6).until(EC.visibility_of_all_elements_located((By.TAG_NAME, "a")))[2].text
-                except NoSuchElementException:
-                    # Product is unavailable
-                    continue
-                product_price = product_price_elem.strip().replace('€', '').replace(',', '.')
-            except TimeoutException:
+                product_price_elem = product.find_all("a")[2].text
+            except IndexError:
+                # Product is unavailable
                 continue
+            product_price = product_price_elem.strip().replace('€', '').replace(',', '.')
+
 
             product_info = {
                 "name": product_name,
@@ -113,18 +47,11 @@ def process_best_price_items(pages_number):
                 "price": product_price
             }
             all_products.append(product_info)
+
         current_page_number += 1
 
-        # Check if the pages are more than can be viewed in the website
-        if(current_page_number==pages_number):
-            unordered_list = driver.find_element(By.CLASS_NAME, "pagination.pagination-has-next")
-            new_pages_number = int(unordered_list.find_elements(By.TAG_NAME, "a")[-2].text)
-            if(new_pages_number>current_page_number):
-                pages_number = new_pages_number
 
-    print("Processed all products")
-
-def select_best_price_items(products_number):
+def select_items(products_number):
     "Selects the Best Price items according to user input, stores them in a list and returns them"
     print()  # empty line
     print("-----------------------------")
@@ -156,23 +83,30 @@ def select_best_price_items(products_number):
     selected_products = [all_products[product_number - 1] for product_number in product_numbers_list]
     return selected_products
 
+def Scrape_Skroutz():
+    global headers
 
-def Scrape_Best_Price():
-    Setup()
-    url = "https://www.bestprice.gr/"
-    driver.get(url)
-
-    search = driver.find_element(By.CLASS_NAME,"search__field").find_element(By.NAME,"q")
     product = input("Enter the product you're looking for: ")
-    search.send_keys(product)
-    search.send_keys(Keys.RETURN)
-    WebDriverWait(driver,10).until(EC.url_to_be("https://www.bestprice.gr/search?q="+product))
+    product.replace(" ","+")
+    url = f"https://www.skroutz.gr/search?keyphrase={product}"
 
-    # if there's categories to select, select one and browse to that category
-    if(categories_are_available()):
-        categories_tag = driver.find_elements(By.CLASS_NAME, "categories__category")
-        categories = [category.get_attribute("title") for category in categories_tag]
-        
+    response = requests.get(url)
+
+    print(response.status_code)
+
+    if (response.status_code != 200):
+        exit("Page Unreachable")
+
+    response_data = response.json()
+
+    html = response_data["html"]
+
+    html_doc = BeautifulSoup(html, 'html.parser')
+
+    if(categories_are_available(html_doc)):
+        categories_tag = html_doc.find_all(class_="categories__category")
+        categories = [category["title"] for category in categories_tag]
+
         print()  # empty tile
         print("Categories", end="\n\n")
         print("-----------------------------")
@@ -190,17 +124,15 @@ def Scrape_Best_Price():
         category_number = int(category_number)
 
         # go to the right category
-        link = driver.find_element(By.LINK_TEXT, categories[category_number - 1]).get_attribute("href")
-        driver.get(link)
+        link = "https://www.bestprice.gr" + html_doc.find("a", title=categories[category_number - 1], class_="categories__category")["href"]
 
-    WebDriverWait(driver,10).until(EC.url_to_be(link))
-    if (pages_are_multiple()):
-        unordered_list = driver.find_element(By.CLASS_NAME, "pagination.pagination-has-next")
-        pages_number = int(unordered_list.find_elements(By.TAG_NAME, "a")[-2].text)
-    else:
-        pages_number = 1
-    # save all the products from all the available pages to a list
-    process_best_price_items(pages_number)
+        response = requests.get(link, headers=headers)
+        response_data = response.json()
+
+
+    js_data = json.loads(response_data["jsData"])
+    pages = js_data['PAGE']['totalPages']
+    process_best_price_items(pages,response)
 
     # print all products
     products_number = len(all_products)
@@ -209,7 +141,7 @@ def Scrape_Best_Price():
         print(str(i + 1) + ": " + all_products[i]["name"])
 
     # Select product number(s) and save them in a list
-    selected_products = select_best_price_items(products_number)
+    selected_products = select_items(products_number)
     # find the cheapest product
     selected_products.sort(key=lambda product: product["price"])
     cheapest_product = selected_products[0]
@@ -219,5 +151,3 @@ def Scrape_Best_Price():
           "- Link: " + cheapest_product["link"])
 
     print("-----------------------------")
-
-    driver.quit()
