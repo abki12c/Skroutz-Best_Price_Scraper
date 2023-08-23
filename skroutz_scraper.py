@@ -1,87 +1,39 @@
-import configparser
-import time
+import requests
+import tls_client
 from tqdm import tqdm
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 
-def Setup():
-    "Sets up the web driver with the customized configuration"
-    global driver
-    config = configparser.ConfigParser()
-    config.read("config.ini")
-
-    driver_path = config.get('General_settings', 'driver_path')
-    browser_type = config.get("General_settings","browser_type").lower()
-
-    if(browser_type == "chrome" ):
-        browser_options = webdriver.ChromeOptions()
-        browser_options.add_argument('--headless=new')
-        if (driver_path == "0"):
-            driver = webdriver.Chrome(options=browser_options)
-        else:
-            driver = webdriver.Chrome(driver_path, options=browser_options)
-    elif(browser_type== "firefox"):
-        browser_options = webdriver.FirefoxOptions()
-        browser_options.add_argument("-headless")
-        if (driver_path == "0"):
-            driver = webdriver.Firefox(options=browser_options)
-        else:
-            driver = webdriver.Firefox(driver_path, options=browser_options)
-    elif(browser_type == "edge"):
-        browser_options = webdriver.EdgeOptions()
-        browser_options.add_argument("--headless=new")
-        if (driver_path == "0"):
-            driver = webdriver.Edge(options=browser_options)
-        else:
-            driver = webdriver.Edge(driver_path, options=browser_options)
-
-
-def categories_are_available():
+def categories_are_available(response_data):
     "Returns True if there are available categories to choose from and False if there aren't"
-    return len(driver.find_elements(By.ID, "skus_result"))!=0
+    category = response_data['category']
+    return len(category) == 0
 
-def pages_are_multiple():
-    "returns True if the product category has multiple pages and False if not"
-    return len(driver.find_elements(By.CLASS_NAME, "paginator")) != 0
-
-def filter_products():
-    "Selects filters"
-    filter_options = driver.find_element(By.CLASS_NAME,"filters-list")
-
-def process_skroutz_items(pages_number):
+def process_best_price_items(pages,response):
     "Processes all products from all the available pages and stores them in a list"
     global all_products
-    base_url = driver.current_url
+    base_url = response.url
     all_products = []
     current_page_number = 1
-    for i in tqdm(range(1, pages_number + 1), desc="Processing page items...", colour="GREEN", unit="page"):
-        current_url = base_url + "&page=" + str(current_page_number)
-        driver.get(current_url)
+    for i in tqdm(range(1, pages + 1), desc="Processing page items...", colour="GREEN", unit="page"):
+        current_url = f"{base_url}&page={current_page_number}"
+        response = session.get(current_url, headers=headers)
 
-        WebDriverWait(driver, timeout=10).until(EC.url_to_be(current_url))
-        WebDriverWait(driver, timeout=10).until(EC.presence_of_element_located((By.ID, "sku-list")))
+        if(response.status_code!=200):
+            exit("Page Unreachable")
 
-        products_list = driver.find_elements(By.CLASS_NAME, "cf.card")
+        response_data = response.json()
+
+        products_list = [product for product in response_data["skus"]]
 
         for product in products_list:
-            try:
-                product_name = WebDriverWait(product, timeout=10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "a"))).get_attribute("title")
-                product_link = WebDriverWait(product, timeout=10).until(
-                    EC.presence_of_element_located((By.TAG_NAME, "a"))).get_attribute("href")
-                try:
-                    product_price_elem = WebDriverWait(product, timeout=6).until(EC.visibility_of_element_located((By.CLASS_NAME, "card-content"))).find_element(By.CLASS_NAME,"price").find_element(By.TAG_NAME, "a")
-                except NoSuchElementException:
-                    # Product is unavailable
-                    continue
-                product_price = float(product_price_elem.text.strip().replace('από', '').replace('€', '').replace(',', '.'))
-            except TimeoutException:
+            product_name = product["name"]
+            product_link = "https://www.skroutz.gr" + product["sku_url"]
+            if(product["obsolete"]):
+                # Product is unavailable
                 continue
+            else:
+                product_price = product["price"].replace('€', '').replace(',', '.')
+
 
             product_info = {
                 "name": product_name,
@@ -90,12 +42,12 @@ def process_skroutz_items(pages_number):
                 "price": product_price
             }
             all_products.append(product_info)
+
         current_page_number += 1
-    print("Processed all products")
 
 
-def select_skroutz_items(products_number):
-    "Selects the skroutz items according to user input, stores them in a list and returns them"
+def select_items(products_number):
+    "Selects the Best Price items according to user input, stores them in a list and returns them"
     print()  # empty line
     print("-----------------------------")
     product_numbers_string = input("Select product(s) number(s) of the product(s) you want to choose. If products are more than one seperate them with commas: ")
@@ -127,61 +79,90 @@ def select_skroutz_items(products_number):
     return selected_products
 
 def Scrape_Skroutz():
-    Setup()
-    url = "https://www.skroutz.gr"
-    driver.get(url)
-
-    search = driver.find_element(By.ID,"search-bar-input")
+    global headers
+    global session
     product = input("Enter the product you're looking for: ")
-    search.send_keys(product)
-    search.send_keys(Keys.RETURN)
+    product.replace(" ", "+")
 
-    # if there's categories to select, select one and browse to that category
-    if(categories_are_available()):
-        unordered_list = driver.find_element(By.CLASS_NAME, "scroll-area")
-        categories_p = unordered_list.find_elements(By.TAG_NAME, "p")
-        categories = [category.text for category in categories_p]
+    headers = {
+        'authority': 'www.skroutz.gr',
+        'accept': 'application/json, text/plain, */*',
+        'accept-language': 'en-US,en;q=0.9',
+        'dnt': '1',
+        'referer': 'https://www.skroutz.gr/search?keyphrase=witcher',
+        'sec-ch-ua': '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
+        'x-requested-with': 'XMLHttpRequest',
+    }
+    params = {
+        'keyphrase': product,
+        'page': '1',
+    }
 
+    session = tls_client.Session(
 
-        print() # empty tile
+        client_identifier="chrome112",
+
+        random_tls_extension_order=True
+
+    )
+
+    response = session.get('https://www.skroutz.gr/search.json', params=params, headers=headers)
+    response_data = response.json()
+
+    if("redirectUrl" in response_data):
+        url = response_data["redirectUrl"].replace("html", "json")
+        response = session.get(url, params=params, headers=headers)
+        response_data = response.json()
+    #print(json.dumps(response_data, indent=4))
+
+    if(categories_are_available(response_data)):
+        print("categories are available")
+        categories = [{"name": category["name"], "link": "https://www.skroutz.gr/" + category["url"]} for category in response_data["page"]["category_cards"]]
+
+        print()  # empty tile
         print("Categories", end="\n\n")
         print("-----------------------------")
         i = 1
         for category in categories:
-            print(str(i) + ". " + category)
-            i+=1
+            print(str(i) + ". " + category["name"])
+            i += 1
 
-        print("-----------------------------", end= "\n\n")
+        print("-----------------------------", end="\n\n")
         category_number = input("Choose the category of the product: ")
         print()  # empty line
-        while(int(category_number) not in [j for j in range(1,i+1)]):
+        while (int(category_number) not in [j for j in range(1, i + 1)]):
             category_number = input("Wrong number, enter again: ")
 
         category_number = int(category_number)
 
         # go to the right category
-        link = driver.find_element(By.LINK_TEXT, categories[category_number-1]).get_attribute("href")
-        driver.get(link)
+        url = categories[category_number-1]["link"].replace("html","json")
+        response = session.get(url, headers=headers,params=params)
 
-    time.sleep(2)
+        if(response.status_code==301):
+            new_url = response.headers['Location']
+            print(new_url)
+            response = requests.get(new_url,headers=headers)
+        response_data = response.json()
 
-    if(pages_are_multiple()):
-        unordered_list = driver.find_element(By.CLASS_NAME, "paginator")
-        pages_number = int(unordered_list.find_elements(By.TAG_NAME, "a")[-2].text)
-    else:
-        pages_number = 1
+    pages = response_data['page']['total_pages']
 
-    # save all the products from all the available pages to a list
-    process_skroutz_items(pages_number)
+    process_best_price_items(pages, response)
 
     # print all products
     products_number = len(all_products)
     print("-----------------------------")
     for i in range(products_number):
-        print(str(i+1) + ": " + all_products[i]["name"])
+        print(str(i + 1) + ": " + all_products[i]["name"])
 
     # Select product number(s) and save them in a list
-    selected_products = select_skroutz_items(products_number)
+    selected_products = select_items(products_number)
     # find the cheapest product
     selected_products.sort(key=lambda product: product["price"])
     cheapest_product = selected_products[0]
@@ -191,5 +172,3 @@ def Scrape_Skroutz():
           "- Link: " + cheapest_product["link"])
 
     print("-----------------------------")
-
-    driver.quit()
