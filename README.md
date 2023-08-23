@@ -15,7 +15,14 @@ The available functionalities are:
 
 The data are scaped using the json data sent to the website server and using Beautiful Soup for Best Price specifically
 
-# Install
+## Installation
+Use the package manager pip to install the requirements
 ```
 pip install -r requirements.txt
 ```
+
+## Run
+````
+python main_program.py
+````
+
