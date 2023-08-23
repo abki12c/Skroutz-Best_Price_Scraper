@@ -58,6 +58,7 @@ if(__name__=="__main__"):
                 answer = input("Wrong answer, enter again: ")
 
         all_products.extend(skroutz.selected_products)
+        print() # empty line
 
         # Select best price products
         best_price = best_price_scraper()

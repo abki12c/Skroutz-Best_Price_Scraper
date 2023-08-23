@@ -24,7 +24,6 @@ class best_price_scraper(Base_Scraper):
         return len(categories) != 0
 
     def process_items(self, pages, response):
-        "Processes all products from all the available pages and stores them in a list"
         base_url = response.url
         current_page_number = 1
         for i in tqdm(range(1, pages + 1), desc="Processing page items...", colour="GREEN", unit="page"):
@@ -42,15 +41,13 @@ class best_price_scraper(Base_Scraper):
             products_list = html_doc.find_all('div', {'data-id': True, 'data-cid': True})
 
             for product in products_list:
-                product_name = product.find_all("a")[1]["title"]
-                product_link = "https://www.bestprice.gr" + product.find_all("a")[1]["href"]
-                try:
-                    product_price_elem = product.find_all("a")[2].text
-                except IndexError:
-                    # Product is unavailable
-                    continue
-                product_price = product_price_elem.strip().replace('€', '').replace(',', '.')
+                product_name = product.find("h3").text.strip()
+                product_link = "https://www.bestprice.gr" + product.find("h3").find("a")["href"]
 
+                product_price = int(product['data-price']) / 100
+                if(product_price==0):
+                    # product unavailable
+                    continue
 
                 product_info = {
                     "name": product_name,

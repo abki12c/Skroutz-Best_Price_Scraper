@@ -38,12 +38,10 @@ class skroutz_scraper(Base_Scraper):
         )
 
     def categories_are_available(self, response_data):
-        "Returns True if there are available categories to choose from and False if there aren't"
         category = response_data['category']
         return len(category) == 0
 
     def process_items(self, pages, response):
-        "Processes all products from all the available pages and stores them in a list"
         base_url = response.url
         all_products = []
         current_page_number = 1

@@ -6,6 +6,7 @@ class Base_Scraper(ABC):
 
     @abstractmethod
     def categories_are_available(data):
+        "Returns True if there are available categories to choose from and False if there aren't"
         pass
 
     def select_items(self, products_number):
@@ -42,6 +43,7 @@ class Base_Scraper(ABC):
 
     @abstractmethod
     def process_items(self, pages, response):
+        "Processes all products from all the available pages and stores them in a list"
         pass
 
     @abstractmethod
