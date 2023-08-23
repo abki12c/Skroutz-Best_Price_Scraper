@@ -1,7 +1,6 @@
-import colorama
 
-from skroutz_scraper import Scrape_Skroutz
-from best_price_scraper import Scrape_Best_Price
+from skroutz_scraper import skroutz_scraper
+from best_price_scraper import best_price_scraper
 from colorama import Fore
 from colorama import init as colorama_init
 
@@ -40,6 +39,8 @@ if(__name__=="__main__"):
 
     print() # empty line
     if(choice=='1'):
-        Scrape_Skroutz()
+        skroutz = skroutz_scraper()
+        skroutz.lowest_price()
     elif(choice=='2'):
-        Scrape_Best_Price()
+        best_price = best_price_scraper()
+        best_price.lowest_price()
