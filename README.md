@@ -1,0 +1,21 @@
+# Skroutz-Best_Price_Scraper
+
+<img src="https://www.digitalpro.gr/wp-content/uploads/2020/09/Skroutz-BestPrice-%CE%A0%CF%8E%CF%82-%CE%B8%CE%B1-%CE%B5%CE%BD%CE%B9%CF%83%CF%87%CF%8D%CF%83%CE%BF%CF%85%CE%BD-%CF%84%CE%BF-eshop-%CF%83%CE%B1%CF%82-930x620.png" width="900" height="600">
+
+
+A cli application that scrapes data from the two biggest price comparison websites in Greece : BestPrice and Skroutz. There's some shops on Best Price that don't exist on Skroutz, so this app provides a quick way to automate comparison between the two sites. 
+
+The available functionalities are:
+
+- Find the cheapest product on Skroutz
+- Find the cheapest product on Best Price 
+- Compare Skroutz and Best Price Prices  # TODO
+- Show reviews from Skroutz and Best Price # TODO
+- Monitor the price of a certain product # TODO
+
+The data are scaped using the json data sent to the website server and using Beautiful Soup for Best Price specifically
+
+# Install
+```
+pip install -r requirements.txt
+```
