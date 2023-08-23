@@ -9,7 +9,7 @@ The available functionalities are:
 
 - Find the cheapest product on Skroutz
 - Find the cheapest product on Best Price 
-- Compare Skroutz and Best Price Prices  # TODO
+- Compare Skroutz and Best Price Prices
 - Show reviews from Skroutz and Best Price # TODO
 - Monitor the price of a certain product # TODO
 

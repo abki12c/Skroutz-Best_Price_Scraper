@@ -44,3 +44,40 @@ if(__name__=="__main__"):
     elif(choice=='2'):
         best_price = best_price_scraper()
         best_price.lowest_price()
+    elif(choice=='3'):
+        all_products = []
+        # Select skroutz products
+        skroutz = skroutz_scraper()
+        answer = ' '
+        while(answer not in ['no','n']):
+            skroutz.select_products()
+
+            answer = input("Do you want to select another product?(Y/N) ")
+            answer.lower()
+            while(answer not in ["yes","no","y","n"]):
+                answer = input("Wrong answer, enter again: ")
+
+        all_products.extend(skroutz.selected_products)
+
+        # Select best price products
+        best_price = best_price_scraper()
+        answer = ' '
+        while (answer not in ['no', 'n']):
+            best_price.select_products()
+
+            answer = input("Do you want to select another product?(Y/N) ")
+            answer.lower()
+            while (answer not in ["yes", "no", "y", "n"]):
+                answer = input("Wrong answer, enter again: ")
+
+        all_products.extend(best_price.selected_products)
+
+        all_products.sort(key=lambda product: product["price"])
+        cheapest_product = all_products[0]
+        print("Cheapest product details:" + "\n" +
+              "- Name: " + cheapest_product["name"] + "\n" +
+              "- Price: " + str(cheapest_product["price"]) + " €" + "\n" +
+              "- Link: " + cheapest_product["link"])
+
+        print("-----------------------------")
+

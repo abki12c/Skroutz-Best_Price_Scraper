@@ -77,8 +77,8 @@ class skroutz_scraper(Base_Scraper):
 
             current_page_number += 1
 
-    def lowest_price(self):
-        product = input("Enter the product you're looking for: ")
+    def select_products(self):
+        product = input("Enter the product you're looking for on Skroutz: ")
         product.replace(" ", "+")
 
         self.params["keyphrase"] = product
@@ -140,13 +140,4 @@ class skroutz_scraper(Base_Scraper):
             print(str(i + 1) + ": " + self.all_products[i]["name"])
 
         # Select product number(s) and save them in a list
-        selected_products = self.select_items(products_number)
-        # find the cheapest product
-        selected_products.sort(key=lambda product: product["price"])
-        cheapest_product = selected_products[0]
-        print("Cheapest product details:" + "\n" +
-              "- Name: " + cheapest_product["name"] + "\n" +
-              "- Price: " + str(cheapest_product["price"]) + " €" + "\n" +
-              "- Link: " + cheapest_product["link"])
-
-        print("-----------------------------")
+        self.selected_products.extend(self.select_items(products_number))

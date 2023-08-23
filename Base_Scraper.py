@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 class Base_Scraper(ABC):
     def __init__(self):
+        self.selected_products = []
         self.all_products = []
 
     @abstractmethod
@@ -8,7 +9,7 @@ class Base_Scraper(ABC):
         pass
 
     def select_items(self, products_number):
-        "Selects the Best Price items according to user input, stores them in a list and returns them"
+        "Selects the items from the same category, according to user input, stores them in a list and returns them"
         print()  # empty line
         print("-----------------------------")
         product_numbers_string = input("Select product(s) number(s) of the product(s) you want to choose. If products are more than one seperate them with commas: ")
@@ -44,5 +45,17 @@ class Base_Scraper(ABC):
         pass
 
     @abstractmethod
-    def lowest_price(self):
+    def select_products(self):
         pass
+    
+    def lowest_price(self):
+        "Finds the cheapest product and shows its information"
+        self.select_products()
+        self.selected_products.sort(key=lambda product: product["price"])
+        cheapest_product = self.selected_products[0]
+        print("Cheapest product details:" + "\n" +
+              "- Name: " + cheapest_product["name"] + "\n" +
+              "- Price: " + str(cheapest_product["price"]) + " €" + "\n" +
+              "- Link: " + cheapest_product["link"])
+
+        print("-----------------------------")
