@@ -30,8 +30,7 @@ class best_price_scraper(Base_Scraper):
             current_url = f"{base_url}&pg={current_page_number}"
             response = requests.get(current_url,headers=self.headers)
 
-            if(response.status_code!=200):
-                exit("Page Unreachable")
+            self.check_response_status(response)
 
             data = response.json()
             html = data['html']
@@ -65,8 +64,7 @@ class best_price_scraper(Base_Scraper):
 
         response = requests.get(url, headers=self.headers)
 
-        if (response.status_code != 200):
-            exit("Page Unreachable")
+        self.check_response_status(response)
 
         response_data = response.json()
 

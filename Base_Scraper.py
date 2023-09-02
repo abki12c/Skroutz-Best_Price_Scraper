@@ -4,6 +4,10 @@ class Base_Scraper(ABC):
         self.selected_products = []
         self.all_products = []
 
+    def check_response_status(self, response):
+        if (response.status_code != 200):
+            exit("Page Unreachable")
+
     @abstractmethod
     def categories_are_available(data):
         "Returns True if there are available categories to choose from and False if there aren't"
