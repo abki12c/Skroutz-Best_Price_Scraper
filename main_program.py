@@ -82,7 +82,7 @@ if(__name__=="__main__"):
         print("-----------------------------")
 
     elif(choice=='5'):
-        minutes = int(input("How frequently do you want to check for a price change in minites? "))
+        minutes = int(input("How frequently do you want to check for a price change in minutes? "))
         seconds = minutes*60
         skroutz = skroutz_scraper()
         skroutz.monitor_product(checking_frequency=seconds)
