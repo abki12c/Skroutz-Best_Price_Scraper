@@ -1,4 +1,3 @@
-
 from skroutz_scraper import skroutz_scraper
 from best_price_scraper import best_price_scraper
 from colorama import Fore
@@ -31,7 +30,7 @@ if(__name__=="__main__"):
     print("4. Show reviews from Skroutz and Best Price")
     print("5. Monitor the price of a certain product")
     print("----------------------------------------------------------")
-    # TODO: 2,3,4,5
+    # TODO: 4,5
 
     choice = input("Choose the desired functionality number: ")
     while(choice not in ['1','2','3','4','5']):
@@ -82,3 +81,8 @@ if(__name__=="__main__"):
 
         print("-----------------------------")
 
+    elif(choice=='5'):
+        minutes = int(input("How frequently do you want to check for a price change in minites? "))
+        seconds = minutes*60
+        skroutz = skroutz_scraper()
+        skroutz.monitor_product(checking_frequency=seconds)

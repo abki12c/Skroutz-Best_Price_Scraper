@@ -1,3 +1,6 @@
+import csv
+import time
+import os
 import requests
 import tls_client
 from tqdm import tqdm
@@ -43,7 +46,6 @@ class skroutz_scraper(Base_Scraper):
 
     def process_items(self, pages, response):
         base_url = response.url
-        all_products = []
         current_page_number = 1
         for i in tqdm(range(1, pages + 1), desc="Processing page items...", colour="GREEN", unit="page"):
             current_url = f"{base_url}&page={current_page_number}"
@@ -139,3 +141,107 @@ class skroutz_scraper(Base_Scraper):
 
         # Select product number(s) and save them in a list
         self.selected_products.extend(self.select_items(products_number))
+
+    def monitor_product(self, checking_frequency = 60):
+        # if the csv file for monitoring products doesn't exist, create it
+        if(not os.path.exists("monitored_products.csv")):
+            with open("monitored_products.csv", "w", newline="") as csvfile:
+                header = ["Name", "Price_Alert", "Current_Price", "Link"]
+                csvwriter = csv.writer(csvfile)
+                csvwriter.writerow(header)
+
+        with open("monitored_products.csv","r+",newline="") as csvfile:
+            csvreader = csv.reader(csvfile)
+            csvwriter = csv.writer(csvfile)
+
+            products_available = True
+            # Check if there's only one row (header) left in the file
+            try:
+                next(csvreader)
+                next(csvreader)
+                # If we reach here, there's at least one more row after the header
+            except StopIteration:
+                # If StopIteration is raised, there are no more rows
+                products_available = False
+
+            if (products_available is False):
+                link = input("There's no available products in the csvfile. Enter the link here: ")
+                idx = link.rindex("/")
+                new_link = link[:idx+1] + "filter_products.json?"
+                name = input("Enter the product name: ")
+                response = self.session.get(new_link, headers=self.headers)
+                response_data = response.json()
+                current_price = response_data["price_min"].replace(",",".").replace("€","")
+                current_price = float(current_price)
+                price_alert = int(input(f"Enter the price point at which you want to receive a notification if the price is the same or lower. The current price is {current_price}: "))
+                row_data = [name,price_alert,current_price,link]
+                csvwriter.writerow(row_data)
+
+
+            # show the available products to monitor
+            products_row_numbers = []
+            row_number = 1
+            csvfile.seek(0)
+            print() # empty line
+            for row in csvreader:
+                if len(row)>0 and row!=['Name', 'Price_Alert', 'Current_Price', 'Link']:
+                    print("Row: " + str(row_number) + "-> Name: " + row[0] + ", Price_Alert: ", row[1] + ", Current_Price: " + row[2] + ", Link: " + row[3])
+                    products_row_numbers.append(row_number)
+                row_number+=1
+
+            print() # Empty line
+            product_number = int(input("Enter the desired product to monitor based on the row number: "))
+
+            while(product_number not in products_row_numbers):
+                product_number = int(input("The provided row number is incorrect, enter again: "))
+
+            csvfile.seek(0)
+
+            for _ in range(product_number-1):
+                next(csvreader)
+
+            name, price_alert, current_price, link = next(csvreader)
+            product = {
+                "name": name,
+                "price_alert": float(price_alert),
+                "current_price": current_price,
+                "link": link,
+                "product_number": product_number
+            }
+
+
+            idx = product["link"].rindex("/")
+            new_link = link[:idx + 1] + "filter_products.json?"
+            response = self.session.get(new_link, headers=self.headers)
+            response_data = response.json()
+
+
+            print("Price Monitoring has began", end="\n\n")
+            while(True):
+                # check
+                current_minimum_price = float(response_data["price_min"].replace('€', '').replace(',', '.'))
+                if(current_minimum_price<product["price_alert"]):
+                    print(f"There's a new minimum price for {product['name']} which is {current_minimum_price}€")
+                    print(f"Link: {product['link']}")
+                    csvfile.seek(0)
+                    # save the new price in the csv file
+                    for line_number, row in enumerate(csvreader, start=1):
+                        if line_number == product["product_number"]:
+                            # Modify the third column
+                            row[2] = current_minimum_price
+                            new_row = row
+                            break
+                    break
+                print("Checked the current price. Price hasn't changed")
+                time.sleep(checking_frequency)
+
+        # open the file to read the existing data and change the new data with the new minimum price
+        with open("monitored_products.csv", "r", newline="") as csvfile:
+            csvreader = csv.reader(csvfile)
+            existing_data = list(csvreader)
+            existing_data[product["product_number"] - 1] = new_row
+
+        # open the file to write the new minimum price
+        with open("monitored_products.csv", "w", newline="") as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerows(existing_data)

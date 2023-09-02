@@ -110,7 +110,6 @@ class best_price_scraper(Base_Scraper):
             product_info = {
                 "name": js_data['PAGE']["product"]["title"],
                 "link": "https://www.bestprice.gr/" + js_data['PAGE']["product"]["link"],
-                "page_number": None,
                 "price": js_data['PAGE']["product"]["price"]//100
             }
             self.all_products.append(product_info)
