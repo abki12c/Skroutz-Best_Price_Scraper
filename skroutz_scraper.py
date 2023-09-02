@@ -64,7 +64,7 @@ class skroutz_scraper(Base_Scraper):
                     # Product is unavailable
                     continue
                 else:
-                    product_price = product["price"].replace('€', '').replace(',', '.')
+                    product_price = product["price"].replace('€', '').replace(".", "").replace(',', '.')
                     product_price = float(product_price)
 
 
