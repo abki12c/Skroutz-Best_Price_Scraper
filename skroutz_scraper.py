@@ -65,6 +65,7 @@ class skroutz_scraper(Base_Scraper):
                     continue
                 else:
                     product_price = product["price"].replace('€', '').replace(',', '.')
+                    product_price = float(product_price)
 
 
                 product_info = {
@@ -99,7 +100,6 @@ class skroutz_scraper(Base_Scraper):
             response_data = response.json()
 
         if(self.categories_are_available(response_data)) :
-            print("categories are available")
             categories = [{"name": category["name"], "link": "https://www.skroutz.gr/" + category["url"]} for category in response_data["page"]["category_cards"]]
 
             print()  # empty tile

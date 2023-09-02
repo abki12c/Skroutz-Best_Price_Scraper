@@ -52,6 +52,7 @@ class Base_Scraper(ABC):
 
     @abstractmethod
     def select_products(self):
+        "Selects some products according to user input and adds them to a list"
         pass
     
     def lowest_price(self):
