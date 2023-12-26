@@ -79,6 +79,7 @@ class skroutz_scraper(Base_Scraper):
 
     def select_products(self):
         product = input("Enter the product you're looking for on Skroutz: ")
+        product = super().convert_language(product)
         product.replace(" ", "+")
 
         self.params["keyphrase"] = product
@@ -94,10 +95,12 @@ class skroutz_scraper(Base_Scraper):
         response = session.get('https://www.skroutz.gr/search.json', params=self.params, headers=self.headers)
         response_data = response.json()
 
+
         if("redirectUrl" in response_data):
             url = response_data["redirectUrl"].replace("html", "json")
             response = session.get(url, params=self.params, headers=self.headers)
             response_data = response.json()
+
 
         if(self.categories_are_available(response_data)) :
             categories = [{"name": category["name"], "link": "https://www.skroutz.gr/" + category["url"]} for category in response_data["page"]["category_cards"]]
@@ -188,8 +191,38 @@ class skroutz_scraper(Base_Scraper):
                     products_row_numbers.append(row_number)
                 row_number+=1
 
-            print() # Empty line
-            product_number = int(input("Enter the desired product to monitor based on the row number: "))
+
+            print()  # empty line
+            print("-----------------------------")
+            product_numbers_string = input("Enter the desired product to monitor based on the row number. To select more than one products seperate them with commas. If you want to monitor all the products simply type all: ")
+            product_numbers_list = []
+            commas = product_numbers_string.count(",")
+            product_numbers_are_incorrect = True
+            while (product_numbers_are_incorrect):
+                if (commas == 0):
+                    if (int(product_numbers_string) not in products_row_numbers):
+                        product_numbers_string = input("Wrong number, enter again: ")
+                        commas = product_numbers_string.count(",")
+                    elif(product_numbers_string.lower() == "all"):
+                        product_numbers_list.append(products_row_numbers)
+                        product_numbers_are_incorrect = False
+                    else:
+                        product_numbers_list.append(int(product_numbers_string))
+                        product_numbers_are_incorrect = False
+                else:
+                    product_numbers_string = product_numbers_string.split(",")
+                    if (any(int(product_number) not in products_row_numbers for product_number in
+                            product_numbers_string)):
+                        product_numbers_string = input("One or more numbers are incorrect, enter again: ")
+                        commas = product_numbers_string.count(",")
+                    else:
+                        product_numbers_list = [int(num) for num in product_numbers_string]
+                        product_numbers_are_incorrect = False
+
+            print()
+            print("-----------------------------")
+            # save the selected products
+            selected_products = [self.all_products[product_number - 1] for product_number in product_numbers_list]
 
             while(product_number not in products_row_numbers):
                 product_number = int(input("The provided row number is incorrect, enter again: "))
@@ -209,14 +242,13 @@ class skroutz_scraper(Base_Scraper):
             }
 
 
-            idx = product["link"].rindex("/")
-            new_link = link[:idx + 1] + "filter_products.json?"
-            response = self.session.get(new_link, headers=self.headers)
-            response_data = response.json()
-
 
             print("Price Monitoring has began", end="\n\n")
             while(True):
+                idx = product["link"].rindex("/")
+                new_link = link[:idx + 1] + "filter_products.json?"
+                response = self.session.get(new_link, headers=self.headers)
+                response_data = response.json()
                 # check
                 current_minimum_price = float(response_data["price_min"].replace('€', '').replace(',', '.'))
                 if(current_minimum_price<product["price_alert"]):

@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from GreekLang import GreekLang
+
 class Base_Scraper(ABC):
     def __init__(self):
         self.selected_products = []
@@ -66,3 +68,17 @@ class Base_Scraper(ABC):
               "- Link: " + cheapest_product["link"])
 
         print("-----------------------------")
+        
+        
+    def convert_language(self,search_phrase):
+        "Converts the language of the search phrase"
+        
+        language_modifier = GreekLang()
+        
+        if language_modifier.is_english(search_phrase):
+            return search_phrase
+        elif language_modifier.is_greek(search_phrase):
+            search_phrase = language_modifier.toGreeklish(search_phrase)
+            return search_phrase
+        else:
+            exit("Wrong Language Input")
