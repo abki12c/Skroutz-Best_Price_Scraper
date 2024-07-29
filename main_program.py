@@ -29,11 +29,12 @@ if(__name__=="__main__"):
     print("3. Compare Skroutz and Best Price Prices")
     print("4. Show reviews from Skroutz and Best Price")
     print("5. Monitor the price of a certain product")
+    print("6. Save product info of all products in a specific category")
     print("----------------------------------------------------------")
     # TODO: 4,5
 
     choice = input("Choose the desired functionality number: ")
-    while(choice not in ['1','2','3','4','5']):
+    while(choice not in ['1','2','3','4','5','6']):
         choice = input("Wrong input. Please enter the desired functionality number: ")
 
     print() # empty line
@@ -81,8 +82,15 @@ if(__name__=="__main__"):
 
         print("-----------------------------")
 
+    elif(choice=='4'):
+        print("Functionality not available yet")
+
     elif(choice=='5'):
         minutes = int(input("How frequently do you want to check for a price change in minutes? "))
         seconds = minutes*60
         skroutz = skroutz_scraper()
         skroutz.monitor_product(checking_frequency=seconds)
+
+    elif(choice=='6'):
+        skroutz = skroutz_scraper()
+        skroutz.save_products_to_csv()

@@ -71,7 +71,7 @@ class Base_Scraper(ABC):
         
         
     def convert_language(self,search_phrase):
-        "Converts the language of the search phrase"
+        "Converts the language of the search phrase to form Greek Greeklish"
         
         language_modifier = GreekLang()
         

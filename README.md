@@ -12,6 +12,7 @@ The available functionalities are:
 - Compare Skroutz and Best Price Prices
 - Show reviews from Skroutz and Best Price # TODO
 - Monitor the price of a certain product # TODO
+- Save product info of all products in a specific category # TODO
 
 The data are scaped using the json data sent to the website server and using Beautiful Soup for Best Price specifically
 
@@ -26,3 +27,6 @@ pip install -r requirements.txt
 python main_program.py
 ````
 
+## Config file
+
+There's a config.ini file that is used for BestPrice scraping. The default settings are to use the Firefox browser with Selenium and the default path for the browser driver. You can change the driver path and browser type to chrome, edge or firefox. Firefox is the default browser because it didn't work on chrome on my system. 

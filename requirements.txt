@@ -1,5 +1,5 @@
-beautifulsoup4==4.12.2
 colorama==0.4.1
-Requests==2.31.0
+Requests==2.32.3
+selenium==4.23.1
 tls_client==0.2.1
 tqdm==4.65.0
