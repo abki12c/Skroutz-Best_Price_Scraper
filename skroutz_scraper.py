@@ -77,71 +77,6 @@ class skroutz_scraper(Base_Scraper):
 
             current_page_number += 1
 
-    def save_products_to_csv(self):
-        product = input("Enter the product you're looking for on Skroutz: ")
-        product = super().convert_language(product)
-        product.replace(" ", "+")
-
-        self.params["keyphrase"] = product
-
-        session = tls_client.Session(
-
-            client_identifier="chrome112",
-
-            random_tls_extension_order=True
-
-        )
-
-        response = session.get('https://www.skroutz.gr/search.json', params=self.params, headers=self.headers)
-        response_data = response.json()
-
-        if ("redirectUrl" in response_data):
-            url = response_data["redirectUrl"].replace("html", "json")
-            response = session.get(url, params=self.params, headers=self.headers)
-            response_data = response.json()
-
-        if (self.categories_are_available(response_data)):
-            categories = [{"name": category["name"], "link": "https://www.skroutz.gr/" + category["url"]} for category
-                          in response_data["page"]["category_cards"]]
-
-            print()  # empty tile
-            print("Categories", end="\n\n")
-            print("-----------------------------")
-            i = 1
-            for category in categories:
-                print(str(i) + ". " + category["name"])
-                i += 1
-
-            print("-----------------------------", end="\n\n")
-            category_number = input("Choose the category of the product: ")
-            print()  # empty line
-            while (int(category_number) not in [j for j in range(1, i + 1)]):
-                category_number = input("Wrong number, enter again: ")
-
-            category_number = int(category_number)
-
-            # go to the right category
-            url = categories[category_number - 1]["link"].replace("html", "json")
-            response = session.get(url, headers=self.headers, params=self.params)
-
-            if (response.status_code == 301):
-                new_url = response.headers['Location']
-                print(new_url)
-                response = requests.get(new_url, headers=self.headers)
-            response_data = response.json()
-
-        pages = response_data['page']['total_pages']
-
-        self.process_items(pages, response)
-
-        with open("data/info.csv","w") as csvfile:
-            fieldnames = ["name","link","price"]
-            writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
-            for product in self.all_products:
-                writer.writerow(product.encode('utf-8', errors='replace').decode('utf-8'))
-
-        print("file has been saved")
-
 
 
     def select_products(self):
@@ -210,6 +145,73 @@ class skroutz_scraper(Base_Scraper):
 
         # Select product number(s) and save them in a list
         self.selected_products.extend(self.select_items(products_number))
+
+
+    def save_products_to_csv(self):
+        product = input("Enter the product you're looking for on Skroutz: ")
+        product = super().convert_language(product)
+        product.replace(" ", "+")
+
+        self.params["keyphrase"] = product
+
+        session = tls_client.Session(
+
+            client_identifier="chrome112",
+
+            random_tls_extension_order=True
+
+        )
+
+        response = session.get('https://www.skroutz.gr/search.json', params=self.params, headers=self.headers)
+        response_data = response.json()
+
+        if ("redirectUrl" in response_data):
+            url = response_data["redirectUrl"].replace("html", "json")
+            response = session.get(url, params=self.params, headers=self.headers)
+            response_data = response.json()
+
+        if (self.categories_are_available(response_data)):
+            categories = [{"name": category["name"], "link": "https://www.skroutz.gr/" + category["url"]} for category in response_data["page"]["category_cards"]]
+
+            print()  # empty tile
+            print("Categories", end="\n\n")
+            print("-----------------------------")
+            i = 1
+            for category in categories:
+                print(str(i) + ". " + category["name"])
+                i += 1
+
+            print("-----------------------------", end="\n\n")
+            category_number = input("Choose the category of the product: ")
+            print()  # empty line
+            while (int(category_number) not in [j for j in range(1, i + 1)]):
+                category_number = input("Wrong number, enter again: ")
+
+            category_number = int(category_number)
+
+            # go to the right category
+            url = categories[category_number - 1]["link"].replace("html", "json")
+            response = session.get(url, headers=self.headers, params=self.params)
+
+            if (response.status_code == 301):
+                new_url = response.headers['Location']
+                print(new_url)
+                response = requests.get(new_url, headers=self.headers)
+            response_data = response.json()
+
+        pages = response_data['page']['total_pages']
+
+        self.process_items(pages, response)
+
+        with open("data/info.csv","w",encoding="utf-8-sig", newline='') as csvfile:
+            fieldnames = ["name","link","price"]
+            writer = csv.DictWriter(csvfile,fieldnames=fieldnames)
+            writer.writeheader()
+            for product in self.all_products:
+                product['name'] = product['name'].encode('utf-8', errors='replace').decode('utf-8', errors='replace')
+                writer.writerow(product)
+
+        print("file has been saved")
 
     def monitor_product(self, checking_frequency = 60):
         # if the csv file for monitoring products doesn't exist, create it

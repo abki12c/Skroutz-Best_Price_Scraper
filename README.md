@@ -12,7 +12,7 @@ The available functionalities are:
 - Compare Skroutz and Best Price Prices
 - Show reviews from Skroutz and Best Price # TODO
 - Monitor the price of a certain product # TODO
-- Save product info of all products in a specific category # TODO
+- Save product info of all products in a specific category
 
 The data are scaped using the json data sent to the website server and using Beautiful Soup for Best Price specifically
 
