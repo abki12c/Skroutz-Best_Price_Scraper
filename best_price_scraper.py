@@ -60,12 +60,10 @@ class best_price_scraper(Base_Scraper):
         with tqdm(total=products_number, desc="Processing product items...", colour="GREEN", unit="product") as pbar:
 
             while len(self.all_products) < products_number:
-                WebDriverWait(driver, timeout=10).until(
-                    EC.presence_of_all_elements_located((By.CLASS_NAME, "p__products")))
-                products_list = driver.find_element(By.CLASS_NAME, "p__products")
 
-                window_height = driver.execute_script(
-                    "return window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;")
+                products_list =WebDriverWait(driver, timeout=10).until(EC.presence_of_element_located((By.CLASS_NAME, "p__products")))
+
+                window_height = driver.execute_script("return window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;")
                 last_height = driver.execute_script("return document.body.scrollHeight")
                 scroll_pause_time = 2  # Adjust this based on how fast new content loads
 
@@ -89,8 +87,8 @@ class best_price_scraper(Base_Scraper):
                 for product in products_info_list:
                     try:
                         product_element = product.find_element(By.CLASS_NAME, "p__meta")
-                        product_name = WebDriverWait(product_element, timeout=10).until(EC.presence_of_all_elements_located((By.TAG_NAME, "a")))[0].get_attribute("title")
-                        product_link = WebDriverWait(product_element, timeout=10).until(EC.presence_of_all_elements_located((By.TAG_NAME, "a")))[0].get_attribute("href")
+                        product_name = WebDriverWait(product_element, timeout=10).until(EC.presence_of_element_located((By.TAG_NAME, "a"))).get_attribute("title")
+                        product_link = WebDriverWait(product_element, timeout=10).until(EC.presence_of_element_located((By.TAG_NAME, "a"))).get_attribute("href")
 
                         if product_link in processed_product_links:
                             continue  # Skip already processed products

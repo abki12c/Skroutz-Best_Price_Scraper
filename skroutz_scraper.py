@@ -142,6 +142,7 @@ class skroutz_scraper(Base_Scraper):
         self.selected_products.extend(self.select_items(products_number))
 
     def save_products_to_csv(self):
+        "Save product info of all products of a specific category into a csv"
         product = input("Enter the product you're looking for on Skroutz: ")
         product = super().convert_language(product)
         product.replace(" ", "+")
