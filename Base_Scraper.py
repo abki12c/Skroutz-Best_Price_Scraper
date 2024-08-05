@@ -62,9 +62,13 @@ class Base_Scraper(ABC):
         self.select_products()
         self.selected_products.sort(key=lambda product: product["price"])
         cheapest_product = self.selected_products[0]
+        review_score = "Not Available"
+        if (cheapest_product["review_score"] != 0):
+            review_score = str(cheapest_product["review_score"])
         print("Cheapest product details:" + "\n" +
               "- Name: " + cheapest_product["name"] + "\n" +
               "- Price: " + str(cheapest_product["price"]) + " €" + "\n" +
+              "- Review score: " + review_score + '\n' +
               "- Link: " + cheapest_product["link"])
 
         print("-----------------------------")

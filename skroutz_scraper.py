@@ -66,11 +66,15 @@ class skroutz_scraper(Base_Scraper):
                 else:
                     product_price = product["price"].replace('€', '').replace(".", "").replace(',', '.')
                     product_price = float(product_price)
+                    review_score = float(product["review_score"].replace(',', '.'))
+                    reviews_count = product["reviews_count"]
 
                 product_info = {
                     "name": product_name,
                     "link": product_link,
-                    "price": product_price
+                    "price": product_price,
+                    "review_score": review_score,
+                    "reviews_count": reviews_count
                 }
                 self.all_products.append(product_info)
 

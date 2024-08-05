@@ -1,13 +1,14 @@
 import configparser
 import time
 from selenium import webdriver
-from selenium.common import NoSuchElementException, TimeoutException
+from selenium.common import NoSuchElementException, TimeoutException, InvalidArgumentException
 from selenium.webdriver import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from tqdm import tqdm
 from Base_Scraper import Base_Scraper
+import json
 
 
 class best_price_scraper(Base_Scraper):
@@ -61,7 +62,7 @@ class best_price_scraper(Base_Scraper):
 
             while len(self.all_products) < products_number:
 
-                products_list =WebDriverWait(driver, timeout=10).until(EC.presence_of_element_located((By.CLASS_NAME, "p__products")))
+                products_list = WebDriverWait(driver, timeout=10).until(EC.presence_of_element_located((By.CLASS_NAME, "p__products")))
 
                 window_height = driver.execute_script("return window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;")
                 last_height = driver.execute_script("return document.body.scrollHeight")
@@ -84,11 +85,22 @@ class best_price_scraper(Base_Scraper):
 
                 products_number = len(products_info_list)
 
+                i = 0
                 for product in products_info_list:
                     try:
                         product_element = product.find_element(By.CLASS_NAME, "p__meta")
                         product_name = WebDriverWait(product_element, timeout=10).until(EC.presence_of_element_located((By.TAG_NAME, "a"))).get_attribute("title")
                         product_link = WebDriverWait(product_element, timeout=10).until(EC.presence_of_element_located((By.TAG_NAME, "a"))).get_attribute("href")
+
+                        review_score = reviews_count = 0
+                        script = driver.find_elements(By.XPATH, '//script[@type="application/ld+json"]')[-1].get_attribute("innerHTML")
+                        products = json.loads(script)
+                        products = products["itemListElement"]
+                        if "aggregateRating" in products[i]["item"]:
+                            review_score = products[i]["item"]["aggregateRating"]["ratingValue"]
+                            reviews_count = products[i]["item"]["aggregateRating"]["reviewCount"]
+
+
 
                         if product_link in processed_product_links:
                             continue  # Skip already processed products
@@ -105,7 +117,9 @@ class best_price_scraper(Base_Scraper):
                     product_info = {
                         "name": product_name,
                         "link": product_link,
-                        "price": float(product_price)
+                        "price": float(product_price),
+                        "review_score": review_score,
+                        "reviews_count": reviews_count
                     }
 
                     self.all_products.append(product_info)
@@ -116,6 +130,8 @@ class best_price_scraper(Base_Scraper):
 
                     if len(self.all_products) >= products_number:
                         break
+
+                    i+=1
 
             print("Processed all products")
 
@@ -153,7 +169,7 @@ class best_price_scraper(Base_Scraper):
 
             category_number = int(category_number)
 
-            category_div = categories_tag[category_number].find_element(By.CLASS_NAME,"categories__cnt")
+            category_div = categories_tag[category_number-1].find_element(By.CLASS_NAME,"categories__cnt")
             products_number = int(category_div.text.replace("προϊόντα",""))
 
             # go to the right category
