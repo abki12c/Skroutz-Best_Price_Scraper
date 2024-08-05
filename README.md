@@ -10,7 +10,7 @@ The available functionalities are:
 - Find the cheapest product on Skroutz
 - Find the cheapest product on Best Price 
 - Compare Skroutz and Best Price Prices
-- Show reviews from Skroutz and Best Price # TODO
+- Show reviews from Skroutz and Best Price
 - Monitor the price of a certain product
 - Save product info of all products in a specific category
 
