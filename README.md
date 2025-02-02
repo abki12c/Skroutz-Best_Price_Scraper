@@ -14,7 +14,7 @@ The available functionalities are:
 - Monitor the price of a certain product
 - Save product info of all products in a specific category
 
-The data are scaped using the json data sent to the website server and using Beautiful Soup for Best Price specifically
+The data are scraped using the json data sent to the website server and using Selenium for Best Price specifically
 
 ## Installation
 Use the package manager pip to install the requirements
