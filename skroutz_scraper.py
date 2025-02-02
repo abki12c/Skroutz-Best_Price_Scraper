@@ -214,6 +214,7 @@ class skroutz_scraper(Base_Scraper):
 
     def monitor_product(self, checking_frequency=60):
         # if the csv file for monitoring products doesn't exist, create it
+        os.makedirs("data", exist_ok=True)
         if (not os.path.exists("data/monitored_products.csv")):
             with open("data/monitored_products.csv", "w", newline="") as csvfile:
                 header = ["Name", "Price_Alert", "Current_Price", "Link"]
