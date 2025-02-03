@@ -172,6 +172,16 @@ class skroutz_scraper(Base_Scraper):
         )
 
         response = session.get('https://www.skroutz.gr/search.json', params=self.params, headers=self.headers)
+
+        if response.status_code == 301:
+            new_url = response.headers.get('Location')
+
+            if new_url:  # Ensure the URL is valid
+                response = session.get(new_url, headers=self.headers)
+            else:
+                print("No redirect URL found in headers.")
+                return
+
         response_data = response.json()
 
         if ("redirectUrl" in response_data):
@@ -212,8 +222,9 @@ class skroutz_scraper(Base_Scraper):
 
         self.process_items(pages, response)
 
+        os.makedirs("data", exist_ok=True)
         with open("data/info.csv", "w", encoding="utf-8-sig", newline='') as csvfile:
-            fieldnames = ["name", "link", "price"]
+            fieldnames = ["name", "link", "price", "review_score", "reviews_count"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
             for product in self.all_products:
