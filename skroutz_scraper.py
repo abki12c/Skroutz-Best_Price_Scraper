@@ -96,6 +96,16 @@ class skroutz_scraper(Base_Scraper):
         )
 
         response = session.get('https://www.skroutz.gr/search.json', params=self.params, headers=self.headers)
+
+        if response.status_code == 301:
+            new_url = response.headers.get('Location')
+
+            if new_url:  # Ensure the URL is valid
+                response = session.get(new_url, headers=self.headers)
+            else:
+                print("No redirect URL found in headers.")
+                return
+
         response_data = response.json()
 
         if ("redirectUrl" in response_data):
