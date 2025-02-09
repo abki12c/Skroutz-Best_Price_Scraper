@@ -263,10 +263,13 @@ class skroutz_scraper(Base_Scraper):
                 name = input("Enter the product name: ")
                 response = self.session.get(new_link, headers=self.headers)
                 response_data = response.json()
-                current_price = response_data["price_min"].replace(",", ".").replace("€", "")
+                current_price = response_data["price_min"].replace("€", "").replace(",",".")
+
+                if(current_price.count(".") == 2):
+                    current_price = current_price.replace(".","",1)
+
                 current_price = float(current_price)
-                price_alert = int(input(
-                    f"Enter the price point at which you want to receive a notification if the price is the same or lower. The current price is {current_price}: "))
+                price_alert = int(input(f"Enter the price point at which you want to receive a notification if the price is the same or lower. The current price is {current_price}: "))
                 row_data = [name, price_alert, current_price, link]
                 csvwriter.writerow(row_data)
 
@@ -341,7 +344,13 @@ class skroutz_scraper(Base_Scraper):
                 response = self.session.get(new_link, headers=self.headers)
                 response_data = response.json()
                 # check
-                current_minimum_price = float(response_data["price_min"].replace('€', '').replace(',', '.'))
+                current_minimum_price = response_data["price_min"].replace('€', '').replace(",",".")
+
+                if (current_minimum_price.count(".") == 2):
+                    current_minimum_price = current_minimum_price.replace(".", "", 1)
+
+                current_minimum_price = float(current_minimum_price)
+
                 if (current_minimum_price < product["price_alert"]):
                     print(f"There's a new minimum price for {product['name']} which is {current_minimum_price}€")
                     print(f"Link: {product['link']}")
