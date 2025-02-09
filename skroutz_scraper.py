@@ -305,12 +305,12 @@ class skroutz_scraper(Base_Scraper):
             product_numbers_are_incorrect = True
             while (product_numbers_are_incorrect):
                 if (commas == 0):
-                    if (int(product_numbers_string) not in products_row_numbers):
+                    if (product_numbers_string.lower() == "all"):
+                        product_numbers_list.extend(products_row_numbers)
+                        product_numbers_are_incorrect = False
+                    elif int(product_numbers_string) not in products_row_numbers:
                         product_numbers_string = input("Wrong number, enter again: ")
                         commas = product_numbers_string.count(",")
-                    elif (product_numbers_string.lower() == "all"):
-                        product_numbers_list.append(products_row_numbers)
-                        product_numbers_are_incorrect = False
                     else:
                         product_numbers_list.append(int(product_numbers_string))
                         product_numbers_are_incorrect = False
@@ -351,41 +351,46 @@ class skroutz_scraper(Base_Scraper):
             print("Price Monitoring has began", end="\n\n")
             new_rows = []
             while (True):
-                product_is_available = True
-                idx = product["link"].rindex("/")
-                new_link = link[:idx + 1] + "filter_products.json?"
-                response = self.session.get(new_link, headers=self.headers)
-                response_data = response.json()
+                for product in product_list:
+                    product_is_available = True
+                    idx = product["link"].rindex("/")
+                    new_link = link[:idx + 1] + "filter_products.json?"
+                    response = self.session.get(new_link.strip(), headers=self.headers)
+                    response_data = response.json()
 
-                if (response_data["price_min"] is None):
-                    current_minimum_price = "-1"
-                    product_is_available = False
-                else:
-                    current_minimum_price = response_data["price_min"].replace('€', '').replace(",",".")
+                    if (response_data["price_min"] is None):
+                        current_minimum_price = "-1"
+                        product_is_available = False
+                    else:
+                        current_minimum_price = response_data["price_min"].replace('€', '').replace(",",".")
 
-                if (current_minimum_price.count(".") == 2):
-                    current_minimum_price = current_minimum_price.replace(".", "", 1)
+                    if (current_minimum_price.count(".") == 2):
+                        current_minimum_price = current_minimum_price.replace(".", "", 1)
 
-                current_minimum_price = float(current_minimum_price)
+                    current_minimum_price = float(current_minimum_price)
 
-                if (not product_is_available):
-                    print("Checked the current price. Price hasn't changed")
-                    time.sleep(checking_frequency)
-                    continue
+                    if (not product_is_available):
+                        print(f"{product['name']}: Not available")
+                        continue
 
-                if (current_minimum_price < product["price_alert"]):
-                    print(f"There's a new minimum price for {product['name']} which is {current_minimum_price}€")
-                    print(f"Link: {product['link']}")
-                    csvfile.seek(0)
-                    # save the new price in the csv file
-                    for line_number, row in enumerate(csvreader, start=1):
-                        if line_number == product["product_number"]:
-                            # Modify the third column
-                            row[2] = current_minimum_price
-                            new_rows.append(row)
-                            break
-                    break
-                print("Checked the current price. Price hasn't changed")
+                    if (current_minimum_price < product["price_alert"]):
+                        print(f"New minimum price for {product['name']}: {current_minimum_price}€")
+                        print(f"Link: {product['link']}")
+                        product["price_alert"] = current_minimum_price
+
+                        csvfile.seek(0)
+                        # save the new price in the csv file
+                        for line_number, row in enumerate(csvreader, start=1):
+                            if line_number == product["product_number"]:
+                                # Modify the third column
+                                row[2] = current_minimum_price
+                                new_rows.append(row)
+                                break
+                        break
+                    print(f"{product['name']}: Checked. No price change.")
+
+                print("Waiting for the next check...")
+                print("*****************************")
                 time.sleep(checking_frequency)
 
         # open the file to read the existing data and change the new data with the new minimum price
