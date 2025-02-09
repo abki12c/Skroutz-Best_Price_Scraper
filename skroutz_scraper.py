@@ -354,7 +354,7 @@ class skroutz_scraper(Base_Scraper):
                 for product in product_list:
                     product_is_available = True
                     idx = product["link"].rindex("/")
-                    new_link = link[:idx + 1] + "filter_products.json?"
+                    new_link = product["link"][:idx + 1] + "filter_products.json?"
                     response = self.session.get(new_link.strip(), headers=self.headers)
                     response_data = response.json()
 
