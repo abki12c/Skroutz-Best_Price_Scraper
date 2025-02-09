@@ -257,19 +257,31 @@ class skroutz_scraper(Base_Scraper):
                 products_available = False
 
             if (not products_available):
+                product_is_available = True
                 link = input("There's no available products in the csvfile. Enter the link here: ")
                 idx = link.rindex("/")
                 new_link = link[:idx + 1] + "filter_products.json?"
                 name = input("Enter the product name: ")
                 response = self.session.get(new_link, headers=self.headers)
                 response_data = response.json()
-                current_price = response_data["price_min"].replace("€", "").replace(",",".")
+
+                if(response_data["price_min"] is None):
+                    current_price = "-1"
+                    product_is_available = False
+                else:
+                    current_price = response_data["price_min"].replace("€", "").replace(",",".")
 
                 if(current_price.count(".") == 2):
                     current_price = current_price.replace(".","",1)
 
                 current_price = float(current_price)
-                price_alert = int(input(f"Enter the price point at which you want to receive a notification if the price is the same or lower. The current price is {current_price}: "))
+
+                if(not product_is_available):
+                    current_price = "Unknown"
+                    price_alert = int(input(f"The product is not avilable. Enter the price point at which you want to receive a notification if the price is the same or lower: "))
+                else:
+                    price_alert = int(input(f"Enter the price point at which you want to receive a notification if the price is the same or lower. The current price is {current_price}: "))
+
                 row_data = [name, price_alert, current_price, link]
                 csvwriter.writerow(row_data)
 
@@ -287,7 +299,7 @@ class skroutz_scraper(Base_Scraper):
 
             print()  # empty line
             print("-----------------------------")
-            product_numbers_string = input("Enter the desired product to monitor based on the row number. To select more than one products seperate them with commas. If you want to monitor all the products simply type all: ")
+            product_numbers_string = input("Enter the desired product to monitor based on the row number. To select more than one products separate them with commas. If you want to monitor all the products simply type all: ")
             product_numbers_list = []
             commas = product_numbers_string.count(",")
             product_numbers_are_incorrect = True
@@ -339,17 +351,27 @@ class skroutz_scraper(Base_Scraper):
             print("Price Monitoring has began", end="\n\n")
             new_rows = []
             while (True):
+                product_is_available = True
                 idx = product["link"].rindex("/")
                 new_link = link[:idx + 1] + "filter_products.json?"
                 response = self.session.get(new_link, headers=self.headers)
                 response_data = response.json()
-                # check
-                current_minimum_price = response_data["price_min"].replace('€', '').replace(",",".")
+
+                if (response_data["price_min"] is None):
+                    current_minimum_price = "-1"
+                    product_is_available = False
+                else:
+                    current_minimum_price = response_data["price_min"].replace('€', '').replace(",",".")
 
                 if (current_minimum_price.count(".") == 2):
                     current_minimum_price = current_minimum_price.replace(".", "", 1)
 
                 current_minimum_price = float(current_minimum_price)
+
+                if (not product_is_available):
+                    print("Checked the current price. Price hasn't changed")
+                    time.sleep(checking_frequency)
+                    continue
 
                 if (current_minimum_price < product["price_alert"]):
                     print(f"There's a new minimum price for {product['name']} which is {current_minimum_price}€")
