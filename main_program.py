@@ -110,7 +110,7 @@ if(__name__=="__main__"):
                 weighted_average_review_score = total_weighted_score / total_review_count
 
 
-            print("Revie Score: " + str(round(weighted_average_review_score,2)) if weighted_average_review_score !=0 else "Not Available")
+            print("Review Score: " + str(round(weighted_average_review_score,2)) if weighted_average_review_score !=0 else "Not Available")
             print("Reviews Count: " + str(total_review_count))
 
             print("-----------------------------")
